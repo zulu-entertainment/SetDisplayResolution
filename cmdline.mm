@@ -23,6 +23,9 @@ int cmdline_main(int argc, const char * argv[])
         
         bool useOsd = 0;
         
+        int usermode = -1;
+        int hidpimode = -1;
+        
         for (int i=1; i<argc; i++)
         {
             if (argv[i][0]=='-')
@@ -31,6 +34,11 @@ int cmdline_main(int argc, const char * argv[])
                 {
                     switch(argv[i][1])
                     {
+                        case 'm':
+                            i++;
+                            if (i >= argc) return -1;
+                            usermode = atoi(argv[i]);
+                            break;
                         case 'w':
                             i++;
                             if (i >= argc) return -1;
@@ -101,7 +109,13 @@ int cmdline_main(int argc, const char * argv[])
                 }
                 if (argv[i][1]=='-')
                 {
-                    if (!strcmp(&argv[i][2], "width"))
+                    if (!strcmp(&argv[i][2], "mode"))
+                    {
+                        i++;
+                        if (i >= argc) return -1;
+                        usermode = atoi(argv[i]);
+                    }
+                    else if (!strcmp(&argv[i][2], "width"))
                     {
                         i++;
                         if (i >= argc) return -1;
@@ -227,7 +241,7 @@ int cmdline_main(int argc, const char * argv[])
             modes_D4* modes;
             CopyAllDisplayModes(display, &modes, &nModes);
             
-            fprintf (stdout, "resolution\tscale\tfreq\tbits/pixel\n******************************************\n");
+            fprintf (stdout, "mode\tresolution\tscale\tfreq\tbits/pixel\n******************************************\n");
             for (int i=0; i<nModes; i++)
             {
                 modes_D4 mode = modes[i];
@@ -244,7 +258,7 @@ int cmdline_main(int argc, const char * argv[])
                     continue;
                 
                 interlaced = ((mode.derived.flags & kDisplayModeInterlacedFlag) == kDisplayModeInterlacedFlag);
-                fprintf (stdout, "%dx%d  \t%.1f\t%d\t%d%s\n", mode.derived.width, mode.derived.height, mode.derived.density, mode.derived.freq, mBitres, (interlaced ? " interlaced" : ""));
+                fprintf (stdout, "%2d\t%dx%d  \t%.1f\t%d\t%d%s\n", i, mode.derived.width, mode.derived.height, mode.derived.density, mode.derived.freq, mBitres, (interlaced ? " interlaced" : ""));
             }
             
             free(modes);
@@ -320,6 +334,39 @@ int cmdline_main(int argc, const char * argv[])
             usleep(kRotationDelay);
         }
         
+        // find best hidpi mode
+        if (scale == 2 && !width && !height) {
+
+            int nModes;
+            modes_D4* modes;
+            CopyAllDisplayModes(display, &modes, &nModes);
+
+            for (int i=0; i<nModes; i++)
+            {
+                modes_D4 mode = modes[i];
+                if (scale && mode.derived.density != scale)
+                    continue;
+                
+                if (freq && mode.derived.freq != freq)
+                    continue;
+                if (!interlaced && ((mode.derived.flags & kDisplayModeInterlacedFlag) == kDisplayModeInterlacedFlag))
+                    continue;
+                int mBitres = (mode.derived.depth == 4) ? 32 : 16;
+                if (bitRes && mBitres != bitRes)
+                    continue;
+                
+                if (width && mode.derived.width < width)
+                    continue;
+                
+                width = mode.derived.width;
+                height = mode.derived.height;
+                freq = mode.derived.freq;
+                bitRes = mBitres;
+                
+                //fprintf (stdout, "mode %d: {resolution=%dx%d, scale = %.1f, freq = %d, bits/pixel = %d}\n", i, width, height, scale, freq, bitRes);
+            }
+        }
+        
         // fill in missing details
         {
             int modeNum;
@@ -351,9 +398,23 @@ int cmdline_main(int argc, const char * argv[])
             
             int iMode = -1;
             
+            if (usermode >= 0 && usermode < nModes) {
+                iMode = usermode;
+#ifdef OSD
+                if (useOsd) {
+                    modes_D4 mode;
+                    CGSGetDisplayModeDescriptionOfLength(display, usermode, &mode, 0xD4);
+                    width = mode.derived.width;
+                    height = mode.derived.height;
+                    scale = mode.derived.density;
+                }
+#endif
+            } else
+                
             for (int i=0; i<nModes; i++)
             {
                 modes_D4 mode = modes[i];
+                
                 if (width && mode.derived.width != width)
                     continue;
                 if (height && mode.derived.height != height)
