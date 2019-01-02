@@ -7,6 +7,7 @@ Source based on RetinaDisplayMenu 0.2
 
 Command-line options:
 
+    --mode        (-m)  Select mode by number
     --width       (-w)  Width
     --height      (-h)  Height
     --scale       (-s)  Scale (2.0 = Retina, default=current)
