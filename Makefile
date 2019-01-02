@@ -3,7 +3,7 @@
 all: clean SetDisplayResolution
 	
 SetDisplayResolution:
-	g++ -Wall -o $@ -framework Foundation -framework ApplicationServices -framework IOKit $< main.mm cmdline.mm utils.mm
+	llvm-g++ -arch x86_64 -o $@ -framework Foundation -framework ApplicationServices -framework AppKit -framework IOKit $< main.mm cmdline.mm utils.mm
 
 install: SetDisplayResolution
 	install SetDisplayResolution /usr/local/bin
