@@ -1,5 +1,5 @@
 # SetDisplayResolution
-OS X command-line tool, to set the display resolution.
+macOS command-line tool, to set the display resolution.
 
 Source based on RetinaDisplayMenu 0.2
 
