@@ -334,8 +334,20 @@ int cmdline_main(int argc, const char * argv[])
             usleep(kRotationDelay);
         }
         
-        // find best hidpi mode
-        if (scale == 2 && !width && !height) {
+        // find best mode for scale
+        if (scale && !width && !height) {
+            
+            double aspectRatio = 0.0;
+
+            { // fill aspect ratio from first mode
+                int modeNum = 0;
+                //CGSGetCurrentDisplayMode(display, &modeNum); // uncomment to get the current mode
+                modes_D4 mode;
+                CGSGetDisplayModeDescriptionOfLength(display, modeNum, &mode, 0xD4);
+                aspectRatio = ((double)mode.derived.width / (double)mode.derived.height);
+                if (!freq) freq = mode.derived.freq;
+                if (!bitRes) bitRes = (mode.derived.depth == 4) ? 32 : 16;
+            }
 
             int nModes;
             modes_D4* modes;
@@ -344,9 +356,9 @@ int cmdline_main(int argc, const char * argv[])
             for (int i=0; i<nModes; i++)
             {
                 modes_D4 mode = modes[i];
+
                 if (scale && mode.derived.density != scale)
                     continue;
-                
                 if (freq && mode.derived.freq != freq)
                     continue;
                 if (!interlaced && ((mode.derived.flags & kDisplayModeInterlacedFlag) == kDisplayModeInterlacedFlag))
@@ -354,16 +366,13 @@ int cmdline_main(int argc, const char * argv[])
                 int mBitres = (mode.derived.depth == 4) ? 32 : 16;
                 if (bitRes && mBitres != bitRes)
                     continue;
-                
                 if (width && mode.derived.width < width)
+                    continue;
+                if (((double)mode.derived.width / (double)mode.derived.height) != aspectRatio)
                     continue;
                 
                 width = mode.derived.width;
                 height = mode.derived.height;
-                freq = mode.derived.freq;
-                bitRes = mBitres;
-                
-                //fprintf (stdout, "mode %d: {resolution=%dx%d, scale = %.1f, freq = %d, bits/pixel = %d}\n", i, width, height, scale, freq, bitRes);
             }
         }
         
@@ -431,7 +440,6 @@ int cmdline_main(int argc, const char * argv[])
                 
                 iMode = i;
                 break;
-                //fprintf (stdout, "mode: {resolution=%dx%d, scale = %.1f, freq = %d, bits/pixel = %d}\n", mode.derived.width, mode.derived.height, mode.derived.density, mode.derived.freq, mode.derived.depth);
             }
             
             if (iMode != -1)
@@ -439,6 +447,7 @@ int cmdline_main(int argc, const char * argv[])
                 SetDisplayModeNum(display, iMode);
 #ifdef OSD
                 if (useOsd) {
+                    usleep(100000);
                     NSString *OSDisplay = @"/Applications/OSDisplay.app/Contents/MacOS/OSDisplay";
                     [NSTask launchedTaskWithLaunchPath:OSDisplay arguments:[NSArray arrayWithObjects:
                                                                             @"-m", [NSString stringWithFormat:@"%dx%d%@", width, height, (scale > 1) ? @" HiDPI" : @""],
