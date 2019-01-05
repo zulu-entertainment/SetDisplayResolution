@@ -3,7 +3,9 @@ macOS command-line tool, to set the display resolution.
 
 Source based on RetinaDisplayMenu 0.2
 
+Install:
 
+    Copy SetDisplayResolution to /usr/local/bin and execute it from Terminal.app
 
 Command-line options:
 
@@ -27,3 +29,4 @@ Examples:
     SetDisplayResolution -w 1920 -h 1080 -s 1 -f 50 -i
     SetDisplayResolution -d 0 -w 1920 -h 1080 -s 2
     SetDisplayResolution -r 90
+    SetDisplayResolution -s 2
