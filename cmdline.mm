@@ -24,7 +24,6 @@ int cmdline_main(int argc, const char * argv[])
         bool useOsd = 0;
         
         int usermode = -1;
-        int hidpimode = -1;
         
         for (int i=1; i<argc; i++)
         {
@@ -225,10 +224,7 @@ int cmdline_main(int argc, const char * argv[])
                 int mBitres = (mode.derived.depth == 4) ? 32 : 16;
                 interlaced = ((mode.derived.flags & kDisplayModeInterlacedFlag) == kDisplayModeInterlacedFlag);
                 
-                if (interlaced)
-                    fprintf (stdout, "Display %d: { resolution = %dx%d,  scale = %.1f,  freq = %d,  bits/pixel = %d, interlaced }\n", i, mode.derived.width, mode.derived.height, mode.derived.density, mode.derived.freq, mBitres);
-                else
-                    fprintf (stdout, "Display %d: { resolution = %dx%d,  scale = %.1f,  freq = %d,  bits/pixel = %d }\n", i, mode.derived.width, mode.derived.height, mode.derived.density, mode.derived.freq, mBitres);
+                fprintf (stdout, "Display %d: { resolution = %dx%d,  scale = %.1f,  freq = %d,  bits/pixel = %d%s }\n", i, mode.derived.width, mode.derived.height, mode.derived.density, mode.derived.freq, mBitres, (interlaced ? ", interlaced" : ""));
                 
             }
             
@@ -241,7 +237,7 @@ int cmdline_main(int argc, const char * argv[])
             modes_D4* modes;
             CopyAllDisplayModes(display, &modes, &nModes);
             
-            fprintf (stdout, "mode\tresolution\tscale\tfreq\tbits/pixel\n******************************************\n");
+            fprintf (stdout, "mode\tresolution\tscale\tfreq\tbits/pixel\n*****************************************************\n");
             for (int i=0; i<nModes; i++)
             {
                 modes_D4 mode = modes[i];
@@ -374,6 +370,8 @@ int cmdline_main(int argc, const char * argv[])
                 width = mode.derived.width;
                 height = mode.derived.height;
             }
+            
+            free(modes);
         }
         
         // fill in missing details
